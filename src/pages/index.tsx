@@ -7,7 +7,7 @@ import { api } from "~/utils/api";
 export default function Home() {
   const user = useUser();
 
-  const { data } = api.example.getAll.useQuery();
+  const { data } = api.posts.getAll.useQuery();
 
   return (
     <>
@@ -26,6 +26,10 @@ export default function Home() {
               <button className="text-white">Sign out</button>
             </SignOutButton>
           )}
+
+          <div>
+            {data?.map((post) => <div key={post.id}>{post.content}</div>)}
+          </div>
         </div>
       </main>
     </>
