@@ -1,55 +1,84 @@
-import { type NextPage } from "next";
-import Head from "next/head";
-import { api } from "~/utils/api";
-
-import { createServerSideHelpers } from "@trpc/react-query/server";
+import type { NextPage } from "next";
 import {
   GetStaticPaths,
   GetStaticPropsContext,
   InferGetStaticPropsType,
 } from "next";
-import { prisma } from "server/context";
-import { appRouter } from "server/routers/_app";
-import superjson from "superjson";
-import { trpc } from "utils/trpc";
+import Head from "next/head";
+import { api } from "~/utils/api";
 
-const ProfilePage: NextPage = () => {
+import { createServerSideHelpers } from "@trpc/react-query/server";
+import superjson from "superjson";
+import { prisma } from "~/server/db";
+import { appRouter } from "~/server/api/root";
+import { PageLayout } from "~/components/layout";
+import Image from "next/image";
+
+const profilePicSize = 128;
+
+type PageProps = InferGetStaticPropsType<typeof getStaticProps>;
+
+const ProfilePage: NextPage<PageProps> = ({ username }) => {
   const { data, isLoading } = api.profile.getUserByUsername.useQuery({
-    username: "gunil",
+    username,
   });
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) {
+    console.log("loading");
+  }
   if (!data) return <div>404</div>;
 
   return (
     <>
       <Head>
-        <title>Profile</title>
+        <title>{data.username}</title>
       </Head>
-      <main className="flex h-screen justify-center">
-        <div>Profile View</div>
-      </main>
+      <PageLayout>
+        <div className="relative h-48 bg-slate-600 ">
+          <Image
+            src={data.imageUrl}
+            alt={`${data.username ?? ""}'s profile pic`}
+            height={profilePicSize}
+            width={profilePicSize}
+            className={`absolute bottom-0 left-0 -mb-[${
+              profilePicSize / 2
+            }px] ml-4 rounded-full border-4 border-black`}
+          />
+
+          <div>{data.username}</div>
+        </div>
+      </PageLayout>
     </>
   );
 };
 
 export async function getStaticProps(
-  context: GetStaticPropsContext<{ id: string }>,
+  context: GetStaticPropsContext<{ slug: string }>,
 ) {
-  const helpers = createServerSideHelpers({
+  const ssg = createServerSideHelpers({
     router: appRouter,
-    ctx: {},
+    ctx: { prisma, userId: null },
     transformer: superjson, // optional - adds superjson serialization
   });
-  const id = context.params?.id as string;
+  const slug = context.params?.slug;
+
+  if (typeof slug !== "string") throw new Error("no slug");
+
+  const username = slug.replace("@", "");
+
   // prefetch `post.byId`
-  await helpers.post.byId.prefetch({ id });
+  await ssg.profile.getUserByUsername.prefetch({ username });
+
   return {
     props: {
-      trpcState: helpers.dehydrate(),
-      id,
+      trpcState: ssg.dehydrate(),
+      username,
     },
-    revalidate: 1,
   };
 }
+
+export const getStaticPaths: GetStaticPaths = () => {
+  return { paths: [], fallback: "blocking" };
+};
+
 export default ProfilePage;
