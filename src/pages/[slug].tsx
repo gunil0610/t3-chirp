@@ -34,19 +34,19 @@ const ProfilePage: NextPage<PageProps> = ({ username }) => {
         <title>{data.username}</title>
       </Head>
       <PageLayout>
-        <div className="relative h-48 bg-slate-600 ">
+        <div className="relative h-36 bg-slate-600 ">
           <Image
             src={data.imageUrl}
             alt={`${data.username ?? ""}'s profile pic`}
-            height={profilePicSize}
-            width={profilePicSize}
-            className={`absolute bottom-0 left-0 -mb-[${
-              profilePicSize / 2
-            }px] ml-4 rounded-full border-4 border-black`}
+            height={128}
+            width={128}
+            className={`absolute bottom-0 left-0 -mb-[64px] ml-4 rounded-full border-4 border-black bg-black`}
           />
-
-          <div>{data.username}</div>
         </div>
+
+        <div className="h-[64px]"></div>
+        <div className="p-4 text-2xl font-bold">{`@${data.username}`}</div>
+        <div className="border-b border-slate-400"></div>
       </PageLayout>
     </>
   );
