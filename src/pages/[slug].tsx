@@ -1,8 +1,8 @@
 import type { NextPage } from "next";
 import {
-  GetStaticPaths,
-  GetStaticPropsContext,
-  InferGetStaticPropsType,
+  type GetStaticPaths,
+  type GetStaticPropsContext,
+  type InferGetStaticPropsType,
 } from "next";
 import Head from "next/head";
 import { api } from "~/utils/api";
@@ -13,8 +13,26 @@ import { prisma } from "~/server/db";
 import { appRouter } from "~/server/api/root";
 import { PageLayout } from "~/components/layout";
 import Image from "next/image";
+import { LoadingPage } from "~/components/loading";
+import { PostView } from "~/components/postview";
 
-const profilePicSize = 128;
+const ProfileFeed = (props: { userId: string }) => {
+  const { data, isLoading } = api.posts.getPostsByUserId.useQuery({
+    userId: props.userId,
+  });
+
+  if (isLoading) return <LoadingPage />;
+
+  if (!data || data.length === 0) return <div>User has not posted</div>;
+
+  return (
+    <div className="flex flex-col">
+      {data?.map((fullPost) => (
+        <PostView {...fullPost} key={fullPost.post.id} />
+      ))}
+    </div>
+  );
+};
 
 type PageProps = InferGetStaticPropsType<typeof getStaticProps>;
 
@@ -44,9 +62,10 @@ const ProfilePage: NextPage<PageProps> = ({ username }) => {
           />
         </div>
 
-        <div className="h-[64px]"></div>
+        <div className="h-[64px]" />
         <div className="p-4 text-2xl font-bold">{`@${data.username}`}</div>
-        <div className="border-b border-slate-400"></div>
+        <div className="border-b border-slate-400" />
+        <ProfileFeed userId={data.id} />
       </PageLayout>
     </>
   );
